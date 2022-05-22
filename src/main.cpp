@@ -526,7 +526,7 @@ int main()
                                 {
                                     int allShapes = 0;
                                     //if (false)
-                                    if (Collisions::areOverlaping(ShapeToVector(*(grid.fullShape)), ShapeToVector(*(moduleSelector.modules[b.first]->GetShape1()))))
+                                    if (Collisions::areOverlapping(ShapeToVector(*(grid.fullShape)), ShapeToVector(*(moduleSelector.modules[b.first]->GetShape1()))))
                                     {
                                        moduleSelector.modules[b.first]->GetShape1()->setFillColor(Palette::Tech1);
                                         allShapes += 1;
@@ -536,7 +536,7 @@ int main()
                                         std::cout << "shape1\n";
                                         moduleSelector.modules[b.first]->GetShape1()->setFillColor(Palette::Highlight2);
                                     }
-                                    if (Collisions::areOverlaping(ShapeToVector(*(grid.fullShape)), ShapeToVector(*(moduleSelector.modules[b.first]->GetShape2()))))
+                                    if (Collisions::areOverlapping(ShapeToVector(*(grid.fullShape)), ShapeToVector(*(moduleSelector.modules[b.first]->GetShape2()))))
                                     {
                                         moduleSelector.modules[b.first]->GetShape2()->setFillColor(Palette::Tech1);
                                         allShapes += 1;

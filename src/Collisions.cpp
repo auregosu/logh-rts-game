@@ -11,7 +11,7 @@ std::vector<Vec2> Collisions::GetShapePoints(sf::Shape shape)
     return points;
 }
 */
-bool Collisions::areOverlaping(std::vector<Vec2> s1, std::vector<Vec2> s2)
+bool Collisions::areOverlapping(std::vector<Vec2> s1, std::vector<Vec2> s2)
 {
     std::vector<Vec2>* shape1 = &s1;
     std::vector<Vec2>* shape2 = &s2;

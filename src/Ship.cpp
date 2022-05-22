@@ -6,7 +6,7 @@ Entity* Entity::isColliding()
     {
         if (e == this)
             continue;
-        if (Collisions::areOverlaping(GetPoints(), e->GetPoints()))
+        if (Collisions::areOverlapping(GetPoints(), e->GetPoints()))
             return e;
     }
     return nullptr;
@@ -244,10 +244,6 @@ void Ship::Update()
 {
     for (auto& p : ships)
     {       
-      if (p->isColliding())
-            p->shape.setFillColor(sf::Color::Blue);
-      else
-            p->shape.setFillColor(p->player->color);
     	if (p->health < p->fullHealth)
     	{
     		float prevModuleHealth = 0;
@@ -456,7 +452,7 @@ void Supply::Update()
 {
     for (auto& s : supplies)
     {
-        if (s->shape.getGlobalBounds().intersects(s->ship->shape.getGlobalBounds()))
+        if (Collisions::areOverlapping(s->GetPoints(), s->ship->GetPoints()))
         {
             if (s->health > 0)
             	s->ship->energy += s->energy;
