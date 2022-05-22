@@ -213,6 +213,7 @@ void BuildGrid::MakeShape()
 	dimensions = {maxX-minX, maxY-minY};
 	sf::ConvexShape *returnShape = new sf::ConvexShape(pointCount);
 	int i = 0;
+	//std::cout << "gui.cpp\n";
 	for (auto& point : sortedPoints)
 	{
 		returnShape->setPoint(i, point.second);

@@ -1,4 +1,4 @@
-	#ifndef MODULETYPES_HPP
+#ifndef MODULETYPES_HPP
 #define MODULETYPES_HPP
 #include "Module.hpp"
 

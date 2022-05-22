@@ -1,5 +1,22 @@
 #include "Ship.hpp"
 
+Entity* Entity::isColliding()
+{
+    for (auto& e : entities)
+    {
+        if (e == this)
+            continue;
+        if (Collisions::areOverlaping(GetPoints(), e->GetPoints()))
+            return e;
+    }
+    return nullptr;
+}
+
+std::vector<Vec2> Ship::GetPoints()
+{
+    return ShapeToVector(shape);
+}
+
 Ship::Ship(Player* _player, Vec2 _pos, std::string _localShape)
 {
 	player = _player;
@@ -226,7 +243,11 @@ void Ship::SquareSelect(Player* clickPlayer, bool isShiftPressed)
 void Ship::Update()
 {
     for (auto& p : ships)
-    {   
+    {       
+      if (p->isColliding())
+            p->shape.setFillColor(sf::Color::Blue);
+      else
+            p->shape.setFillColor(p->player->color);
     	if (p->health < p->fullHealth)
     	{
     		float prevModuleHealth = 0;
@@ -245,7 +266,7 @@ void Ship::Update()
     	}
     	if (p->health <= 0)
     	{
-    		//ships.erase(p);
+        deadEntities.insert(p);
     		continue;
     	}
     	if (p->energy <= 0)
@@ -357,6 +378,43 @@ void Ship::Update()
     }
 }
 
+void Ship::Draw(sf::RenderWindow* window, GameStates gameState, PlayerAction action, 
+        sf::Vertex* mouseLine)
+{
+    switch (gameState)
+    {
+        case GAME:
+            if (action == PlayerAction::COMMAND_SHIP_MOVEMENT_ROTATE && selected)
+            {
+                window->draw(mouseLine, 2, sf::Lines);
+                window->draw(ghost);
+            }
+            if (health > 0)
+                window->draw(shape);
+            for (auto& m : modules)
+            {
+                if (m->health > 0)
+                    m->Draw(window);
+            }
+            for (auto& w : weapons)
+            {
+                if (w->attacking)
+                    window->draw(w->beam);
+            }
+            if (player == Player::mainPlayer)
+            {   
+                window->draw(lifeBar);
+                window->draw(energyBar);
+            }
+        break;
+    }
+}
+
+std::vector<Vec2> Supply::GetPoints()
+{
+    return ShapeToVector(shape);
+}
+
 Supply::Supply(Vec2 _pos, Ship* _ship, Player* _player)
 {
     supplies.insert(this);
@@ -391,12 +449,9 @@ void Supply::Move(Vec2 destination, Ship* destinationShip)
         startingMovement = false;
     }
     else
-    {
-        moving = true;
-        startingMovement = true;
-        stopping = false;
-    }
+    { moving = true; startingMovement = true; stopping = false; }
 }
+
 void Supply::Update()
 {
     for (auto& s : supplies)
@@ -477,6 +532,22 @@ void Supply::Update()
         s->shape.setPosition(s->pos);
         s->globalBounds = s->shape.getGlobalBounds();
     }
+}
+
+void Supply::Draw(sf::RenderWindow* window, GameStates gameState, PlayerAction action, sf::Vertex* mouseLine)
+{  
+    switch (gameState)
+    {
+        case GAME:
+            if (health > 0)
+                window->draw(shape);
+        break;
+    }
+}
+
+std::vector<Vec2> Settlement::GetPoints()
+{
+    return ShapeToVector(shape);
 }
 
 Settlement::Settlement(Vec2 _pos, Player* _player)
@@ -561,10 +632,27 @@ void Settlement::Update()
     }
 }
 
-std::unordered_set<Entity*> Entity::entities;
+void Settlement::Draw(sf::RenderWindow* window, GameStates gameState, PlayerAction action, sf::Vertex* mouseLine)
+{
+    switch (gameState)
+    {
+        case GAME:
+            if (action == PlayerAction::CHANGING_SUPPLIES)
+            {
+                for (auto& pair : mouseLines)
+                {
+                    window->draw(&(pair.second)[0], 2, sf::Lines);
+                }
+                window->draw(mouseLine, 2, sf::Lines);
+            }
+            if (health > 0)
+                window->draw(shape);
+        break;
+    }
+}
+std::unordered_set<Entity*> Entity::entities, Entity::deadEntities;
 std::map<std::string, ShipShape*> Ship::shipShapes;
-std::unordered_set<Ship*> Ship::ships;
-std::unordered_set<Ship*> Ship::selectedShips;
+std::unordered_set<Ship*> Ship::ships, Ship::selectedShips;
 float Ship::shipScale = 60;
 std::unordered_set<Supply*> Supply::supplies;
 std::unordered_set<Settlement*> Settlement::settlements;

@@ -4,10 +4,9 @@
 using namespace std::literals::chrono_literals;
 
 float camSpeed = 8;
-enum GameStates {MENU, GAME};
-GameStates gameState = MENU;
-enum MenuScreens {SHAPEMAKE, BUILD};
+
 MenuScreens menuScreen = SHAPEMAKE;
+GameStates gameState = MENU;
 
 int main()
 {
@@ -451,7 +450,7 @@ int main()
                                         }
                                         grid.fullShape->setScale(1, 1);
                                         blueprintShip.mass = (grid.blockCount+grid.dimensions.x*grid.dimensions.y)/2;
-                                        std::cout << blueprintShip.mass << std::endl;
+                                        //std::cout << blueprintShip.mass << std::endl;
                                         Ship::shipShapes.insert(std::make_pair("custom", grid.fullShape));
                                         blueprintShip.localShape = Ship::shipShapes["custom"];
                                         for (int i = 0; i < 5; i+=1)
@@ -478,17 +477,14 @@ int main()
                                         modulePoints.ChangeText(sf::String(std::to_string(grid.blockCount)+"/"+std::to_string(grid.size)));
                                         break;
                                     case BUILD:
-                                        if (sf::Mouse::isButtonPressed(sf::Mouse::Left))
+                                        for (auto& b : moduleSelector.bools)
                                         {
-                                            for (auto& b : moduleSelector.bools)
+                                            if (b.second)
                                             {
-                                                if (b.second)
-                                                {
-                                                    if (moduleSelector.modules[b.first]->GetShape1()->getGlobalBounds().contains(mousePos))
-                                                        moduleSelector.modules[b.first]->GetShape1()->setPosition(mousePos-Player::mainPlayer->pivot1);
-                                                    if (moduleSelector.modules[b.first]->GetShape2()->getGlobalBounds().contains(mousePos))
-                                                        moduleSelector.modules[b.first]->GetShape2()->setPosition(mousePos-Player::mainPlayer->pivot1);
-                                                }
+                                                if (moduleSelector.modules[b.first]->GetShape1()->getGlobalBounds().contains(mousePos))
+                                                    moduleSelector.modules[b.first]->GetShape1()->setPosition(mousePos-Player::mainPlayer->pivot1);
+                                                if (moduleSelector.modules[b.first]->GetShape2()->getGlobalBounds().contains(mousePos))
+                                                    moduleSelector.modules[b.first]->GetShape2()->setPosition(mousePos-Player::mainPlayer->pivot1);
                                             }
                                         }
                                         break;
@@ -529,17 +525,18 @@ int main()
                                 if (b.second)
                                 {
                                     int allShapes = 0;
-                                    if (grid.fullShape->getGlobalBounds().intersects(moduleSelector.modules[b.first]->GetShape1()->getGlobalBounds()))
+                                    //if (false)
+                                    if (Collisions::areOverlaping(ShapeToVector(*(grid.fullShape)), ShapeToVector(*(moduleSelector.modules[b.first]->GetShape1()))))
                                     {
-                                        moduleSelector.modules[b.first]->GetShape1()->setFillColor(Palette::Tech1);
+                                       moduleSelector.modules[b.first]->GetShape1()->setFillColor(Palette::Tech1);
                                         allShapes += 1;
                                     }
                                     else
                                     {
+                                        std::cout << "shape1\n";
                                         moduleSelector.modules[b.first]->GetShape1()->setFillColor(Palette::Highlight2);
                                     }
-
-                                    if (grid.fullShape->getGlobalBounds().intersects(moduleSelector.modules[b.first]->GetShape2()->getGlobalBounds()))
+                                    if (Collisions::areOverlaping(ShapeToVector(*(grid.fullShape)), ShapeToVector(*(moduleSelector.modules[b.first]->GetShape2()))))
                                     {
                                         moduleSelector.modules[b.first]->GetShape2()->setFillColor(Palette::Tech1);
                                         allShapes += 1;
@@ -561,56 +558,21 @@ int main()
         Ship::Update();
         Settlement::Update();
         Supply::Update();
-
+        Entity::KillAllEntities();
 // DISPLAY.
         window.setView(view);
         window.clear(Palette::Color1);
+
+        for (auto& e : Settlement::settlements)
+            e->Draw(&window, gameState, Player::mainPlayer->action, mouseLine);
+        for (auto& e : Supply::supplies)
+            e->Draw(&window, gameState, Player::mainPlayer->action, mouseLine);
+        for (auto& e : Ship::ships)
+            e->Draw(&window, gameState, Player::mainPlayer->action, mouseLine);
+
         switch (gameState)
         {
             case GAME:
-                for (auto& supply : Supply::supplies)
-            {
-                if (supply->health > 0)
-                    window.draw(supply->shape);
-            }
-            for (auto& ship : Ship::ships)
-            {
-                if (Player::mainPlayer->action == PlayerAction::COMMAND_SHIP_MOVEMENT_ROTATE && ship->selected)
-                {
-                    window.draw(mouseLine, 2, sf::Lines);
-                    window.draw(ship->ghost);
-                }
-                if (ship->health > 0)
-                    window.draw(ship->shape);
-                for (auto& m : ship->modules)
-                {
-                    if (m->health > 0)
-                        m->Draw(&window);
-                }
-                for (auto& w : ship->weapons)
-                {
-                    if (w->attacking)
-                        window.draw(w->beam);
-                }
-                if (ship->player == Player::mainPlayer)
-                {   
-                    window.draw(ship->lifeBar);
-                    window.draw(ship->energyBar);
-                }
-            }
-            for (auto& settle : Settlement::settlements)
-            {
-                if (Player::mainPlayer->action == PlayerAction::CHANGING_SUPPLIES)
-                {
-                    for (auto& pair : settle->mouseLines)
-                    {
-                        window.draw(&(pair.second)[0], 2, sf::Lines);
-                    }
-                    window.draw(mouseLine, 2, sf::Lines);
-                }
-                if (settle->health > 0)
-                    window.draw(settle->shape);
-            }
             if (Player::mainPlayer->action == PlayerAction::SELECTING_SQUARE)
                     window.draw(Player::mainPlayer->selectionSquare);
                 break;
@@ -640,7 +602,7 @@ int main()
                 window.draw(widget->text);
             }
         }
-        
+
         window.display();
         auto updateEnd = std::chrono::steady_clock::now();
         std::chrono::duration<float> updateTimeUsed = updateEnd - updateStart;

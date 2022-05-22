@@ -1,5 +1,5 @@
 CC:=g++
-FLAGS:=-Wall -g --std=c++17
+FLAGS:=-w -g --std=c++17
 LIB:=-lsfml-system -lsfml-window -lsfml-graphics
 SRC:=$(wildcard src/*.cpp)
 OBJ:=$(SRC:src/%.cpp=obj/%.o)

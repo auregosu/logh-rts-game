@@ -1,7 +1,6 @@
 #ifndef PLAYER_HPP
 #define PLAYER_HPP
 #define _USE_MATH_DEFINES
-#include <iostream>
 #include <cmath>
 #include <unordered_set>
 #include <set>

@@ -10,17 +10,20 @@ extern float deltaTime;
 class Entity
 {
 public:
-    static std::unordered_set<Entity*> entities;
+    static std::unordered_set<Entity*> entities, deadEntities;
     Player* player = nullptr;
     sf::FloatRect globalBounds;
     Vec2 pos;
     float health, fullHealth;
+    bool dead;
 
     Entity()
     {
+        dead = false;
         entities.insert(this);
     }
-
+    Entity* isColliding();
+    inline virtual std::vector<Vec2> GetPoints() {}
     inline static Entity* Click(Vec2 mousePos)
     {
         for (auto& entity : entities)
@@ -30,6 +33,21 @@ public:
         }
         return nullptr;
     }
+    inline virtual void Draw(sf::RenderWindow* window, GameStates gameState, PlayerAction action, 
+            sf::Vertex* mouseLine) {}
+    inline virtual int GetPointNum() {}
+    inline virtual void Kill() {}
+    inline static void KillAllEntities()
+    {
+        for (auto& e : deadEntities)
+        {
+            if (!e->dead && e->health <= 0)
+            {
+                e->Kill();
+                e->dead = true;
+            }
+        }
+    }
 };
 
 class Ship : public Entity
@@ -37,8 +55,7 @@ class Ship : public Entity
 public:
     static float shipScale;
     static std::map<std::string, ShipShape*> shipShapes;
-    static std::unordered_set<Ship*> ships;
-    static std::unordered_set<Ship*> selectedShips;
+    static std::unordered_set<Ship*> ships, selectedShips;
     std::vector<Module*> modules;
     std::vector<Weapon*> weapons;
     Weapon* selectedWeapon = nullptr;
@@ -55,6 +72,12 @@ public:
     Ship() {};
     Ship(Player* _player, Vec2 _pos, std::string _localShape);
     Ship(Player* _player, Vec2 _pos, Ship blueprintShip);
+    void Kill()
+    {
+        ships.erase(this);
+        entities.erase(this);
+    }
+    std::vector<Vec2> GetPoints();
 
     void Move(Vec2 destination, float destinatedRotation, Entity* destinationEntity, float range);
 
@@ -81,7 +104,12 @@ public:
         return nullptr;
     }
 
+    inline int GetPointNum() {return shape.getPointCount();}
+
     void SelectWeapon(long unsigned int j);
+    
+    void Draw(sf::RenderWindow* window, GameStates gameState, PlayerAction action, 
+            sf::Vertex* mouseLine);
 
     static void Update();
 
@@ -109,10 +137,16 @@ public:
     float fullHealth=10, energy, fullEnergy=100, prevDistance, lastPrevDistance, targetDistance, currentDistance, speed, maxSpeed=2;
     bool moving = false, stopping = false, startingMovement = false;
 
+    std::vector<Vec2> GetPoints();
+
     Supply(Vec2 _pos, Ship* _ship, Player* _player);
 
     void Move(Vec2 destination, Ship* destinationShip = nullptr);
 
+    void Draw(sf::RenderWindow* window, GameStates gameState, PlayerAction action, 
+            sf::Vertex* mouseLine);
+
+    inline int GetPointNum() {return shape.getPointCount();}
     static void Update();
 };
 
@@ -125,6 +159,13 @@ public:
     std::map<Ship*, std::array<sf::Vertex, 2>> mouseLines;
     sf::CircleShape shape;
     float selected=false, fullHealth=100, accumulator=0, time=5;
+
+    void Kill()
+    {
+        settlements.erase(this);
+        entities.erase(this);
+    }
+    std::vector<Vec2> GetPoints();
 
     Settlement(Vec2 _pos, Player* _player);
 
@@ -150,11 +191,14 @@ public:
         }
     }
 
+    void Draw(sf::RenderWindow* window, GameStates gameState, PlayerAction action, 
+            sf::Vertex* mouseLine);
+
+    inline int GetPointNum() {return shape.getPointCount();}
     static bool ClickSelect(Player* clickPlayer, Vec2 mousePos, bool isShiftPressed);
 
     static void ClearSelect();
 
     static void Update();
-};
-
+}; 
 #endif

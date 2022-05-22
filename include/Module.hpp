@@ -1,6 +1,6 @@
 #ifndef MODULE_HPP
 #define MODULE_HPP
-#include "Player.hpp"
+#include "Collisions.hpp"
 
 class Module
 {
