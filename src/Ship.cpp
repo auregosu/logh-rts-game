@@ -161,6 +161,18 @@ void Ship::Move(Vec2 destination, float destinatedRotation, Entity* destinationE
 	}
 }
 
+void Ship::Stop()
+{
+    if (motorX != nullptr)
+    {
+        motorX->stopping = true;
+    }
+    if (motorY != nullptr)
+    {
+        motorY->stopping = true;
+    }
+}
+
 void Ship::SelectWeapon(long unsigned int j)
 {
     for (long unsigned int i = 0; i < weapons.size(); i++)

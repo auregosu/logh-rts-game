@@ -45,7 +45,7 @@ int main()
     Settlement* settle = new Settlement({SCREENWIDTH/2, 900}, Player::mainPlayer);
     Settlement* settle2 = new Settlement({SCREENWIDTH/2, -300}, player2);
 
-    BuildGrid grid(8);
+    BuildGrid grid(10, 400, 100);
     std::vector<Module::Type> availableModules;
     availableModules.push_back(Module::Type::MOTORX);
     availableModules.push_back(Module::Type::MOTORY);
@@ -308,8 +308,9 @@ int main()
                                     for (auto& ship : Ship::selectedShips)
                                         ship->SelectWeapon(3);
                                     break;
-                                case sf::Keyboard::P:
-                                    //gameState = GameStates::MENU;
+                                case sf::Keyboard::S:
+                                    for (auto& ship : Ship::selectedShips)
+                                        ship->Stop();
                                     break;
                                 default:
                                     break;
@@ -344,8 +345,8 @@ int main()
                                 switch (menuScreen)
                                 {
                                     case SHAPEMAKE:
-                                        grid.Click(mousePos);
-                                        modulePoints.ChangeText(sf::String(std::to_string(grid.blockCount)+"/"+std::to_string(grid.size)));
+                                       grid.AddPoint(mousePos);
+                                        modulePoints.ChangeText(sf::String(std::to_string(grid.pointCount)+"/"+std::to_string(grid.size)));
                                         break;
                                     case BUILD:
                                         for (auto& b : moduleSelector.bools)
@@ -361,20 +362,33 @@ int main()
                                         break;
                                 }       
                             }
+                            else // sf::Mouse::Right
+                            {
+                                switch (menuScreen)
+                                {
+                                    case SHAPEMAKE:
+                                        grid.RemovePoint(mousePos);
+                                        modulePoints.ChangeText(sf::String(std::to_string(grid.pointCount)+"/"+std::to_string(grid.size)));
+                                        break;
+                                    default:
+                                        break;
+                                }
+                            }
                             break;
                         case sf::Event::MouseButtonReleased:
                             if (event.mouseButton.button == sf::Mouse::Left)
                             {
                                 if (shapeMakeButton.value == 1)
                                 {
-                                    if (grid.blockCount > 0)
+                                    if (grid.pointCount > 0)
                                     {
                                         shapeMakeButton.shape.setFillColor(shapeMakeButton.color);
                                         shapeMakeButton.value = 0;
                                         shapeMakeButton.active = false;
                                         buildButton.active = true;
                                         grid.MakeShape();
-                                        moduleSelector.points = grid.blockCount;
+                                        // esoteric calculations
+                                        moduleSelector.points = std::round((sqrt(grid.pointCount)+0.2*(grid.dimensions.x+grid.dimensions.y))-1);
                                         moduleSelector.FitForShip(grid.fullShape->getScale().x, grid.fullShape->getOrigin(), grid.fullShape->getPosition(), grid.dimensions);
                                         moduleSelector.ActivateButtons();
                                         modulePoints.ChangeText(sf::String(std::to_string(moduleSelector.points)));
@@ -421,7 +435,7 @@ int main()
                                             break;
                                         }
                                     }
-                                    if (moduleSelector.points == grid.blockCount)
+                                    if (moduleSelector.points == grid.pointCount)
                                         canBuild = false;
                                     if (canBuild)
                                     {
@@ -449,7 +463,7 @@ int main()
                                             }
                                         }
                                         grid.fullShape->setScale(1, 1);
-                                        blueprintShip.mass = (grid.blockCount+grid.dimensions.x*grid.dimensions.y)/2;
+                                        blueprintShip.mass = (grid.pointCount+grid.dimensions.x*grid.dimensions.y)/2;
                                         //std::cout << blueprintShip.mass << std::endl;
                                         Ship::shipShapes.insert(std::make_pair("custom", grid.fullShape));
                                         blueprintShip.localShape = Ship::shipShapes["custom"];
@@ -473,8 +487,6 @@ int main()
                                 switch (menuScreen)
                                 {
                                     case SHAPEMAKE:
-                                        grid.ClickMove(mousePos);
-                                        modulePoints.ChangeText(sf::String(std::to_string(grid.blockCount)+"/"+std::to_string(grid.size)));
                                         break;
                                     case BUILD:
                                         for (auto& b : moduleSelector.bools)
@@ -519,6 +531,10 @@ int main()
                 case MENU:
                     switch (menuScreen)
                     {
+                        case SHAPEMAKE:
+                            if (!grid.closed)
+                                grid.UpdateShape(mousePos);
+                            break;
                         case BUILD:
                             for (auto& b : moduleSelector.bools)
                             {
@@ -580,8 +596,11 @@ int main()
                 switch(menuScreen)
                 {
                     case SHAPEMAKE:
-                        for (auto& block : grid.shapes)
-                            window.draw(block.second);
+                        window.draw(grid.background);
+                        for (auto& l : grid.lines)
+                            window.draw(l);
+                        window.draw(grid.tempShape);
+                        window.draw(grid.startPoint);
                         break;
                     case BUILD:
                             window.draw(*grid.fullShape);

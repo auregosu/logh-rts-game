@@ -30,27 +30,39 @@ public:
 class BuildGrid
 {
 public:
-	std::map<coord, bool> values;
-	std::map<coord, sf::RectangleShape> shapes;
+	std::vector<Vec2> points;
+	std::vector<sf::VertexArray> lines;
+	sf::RectangleShape background;
 	sf::ConvexShape* fullShape;
+	sf::ConvexShape tempShape;
+	sf::CircleShape startPoint;
 	Vec2 dimensions;
-	int size;
-	int blockCount = 0;
-	bool trueing = true;
+	int size, blockSize, offset;
+	int pointCount = 0;
+	bool closed = false;
 	sf::Color emptyColor;
 
-	BuildGrid(int _size);
-	inline void TrueBlock(coord blockFirst)
+	BuildGrid(int _size, int _blockSize, int _offset);
+	inline Vec2 coordToScreen(Vec2 vC)
 	{
-		if (blockCount < size)
-		{
-	    	values[blockFirst] = true;
-	    	shapes[blockFirst].setFillColor(Player::mainPlayer->color);
-            blockCount+=1;
-      	}
+		Vec2 vS = {
+			vC.x*(blockSize/size)+offset,
+			vC.y*(blockSize/size)+offset,
+		};
+		return vS;
 	}
-	void Click(Vec2 mouse);
-	void ClickMove(Vec2 mouse);
+	inline Vec2 screenToCord(Vec2 vS)
+	{
+		Vec2 vC = {
+		std::round((vS.x-offset)/(blockSize/size)),
+		std::round((vS.y-offset)/(blockSize/size)),
+		};
+		return vC;
+	}
+	void AddPoint(Vec2 mouse);
+	void RemovePoint(Vec2 mouse);
+	void UpdateShape(Vec2 mouse);
+	void Reset();
 	void MakeShape();
 };
 

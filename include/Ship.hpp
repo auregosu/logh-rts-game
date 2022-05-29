@@ -81,6 +81,8 @@ public:
 
     void Move(Vec2 destination, float destinatedRotation, Entity* destinationEntity, float range);
 
+    void Stop();
+
     inline void Attack(Entity* entity, Module* module, bool move)
     {
         if (entity->player != player)

@@ -53,144 +53,134 @@ Button::Button(bool _active, Vec2 pos, Vec2 size, sf::Color _color, sf::String t
 	text.setStyle(sf::Text::Bold);
 }
 
-BuildGrid::BuildGrid(int _size)
+BuildGrid::BuildGrid(int _size, int _blockSize, int _offset)
 {
 	size = _size;
-	int blockSize = 400/size;
-	fullShape = new sf::ConvexShape(1); 
+	offset = _offset;
+	blockSize = _blockSize;
+	int spacing = blockSize/size;
+	fullShape = new sf::ConvexShape(1);
 	for (int x = 0; x < size; x++)
 	{
-		for (int y = 0; y < size; y++)
+		sf::VertexArray line(sf::Lines, 2);
+		line[0].position = Vec2(offset, offset+x*spacing);
+		line[1].position = Vec2(offset+blockSize, offset+x*spacing);
+		lines.push_back(line);
+	}
+	for (int y = 0; y < size; y++)
+	{
+		sf::VertexArray line(sf::Lines, 2);
+		line[0].position = Vec2(offset+y*spacing, offset);
+		line[1].position = Vec2(offset+y*spacing, offset+blockSize);
+		lines.push_back(line);
+	}
+	for (auto& line : lines)
+	{
+		line[0].color = Palette::Color1;
+		line[1].color = Palette::Color1;
+	}
+	background.setPosition(Vec2(offset, offset));
+	background.setSize(Vec2(blockSize, blockSize));
+	emptyColor = sf::Color(48, 60, 60);
+	background.setFillColor(emptyColor);
+	tempShape.setFillColor(Palette::Highlight1);
+	tempShape.setScale(Vec2(blockSize/size, blockSize/size));
+	tempShape.setPosition(100, 100);
+	startPoint.setFillColor(sf::Color::White);
+	startPoint.setRadius(5);
+	startPoint.setOrigin(5, 5);
+	startPoint.setPointCount(10);
+	startPoint.setPosition(-5, -5);
+}
+
+void BuildGrid::AddPoint(Vec2 mouse)
+{
+	Vec2 clicked = screenToCord(mouse);
+	if (background.getGlobalBounds().contains(mouse))
+	{
+		bool isDifferent = true;
+		bool isFirst = false;
+		if (pointCount < size && !closed)
 		{
-			float spacing = 2;
-			coord coordinate = {x, y};
-			sf::RectangleShape s(Vec2(0, 0));
-			s.setPosition(Vec2(100+(blockSize*x)+x*spacing, 100+(blockSize*y)+y*spacing));
-			s.setSize(Vec2(blockSize, blockSize));
-			emptyColor = sf::Color(48, 60, 60);
-			s.setFillColor(emptyColor);
-			values.insert({coordinate, false});
-			shapes.insert(std::make_pair(coordinate, s));
+			int first = true;
+			for (auto& point : points)
+			{
+				if (clicked.x == point.x && clicked.y == point.y)
+				{
+					isDifferent = false;
+					if (first)
+						isFirst = true;
+					break;
+				}
+				first = false;
+			}
+			if (isDifferent)
+			{
+				points.push_back(Vec2(clicked.x, clicked.y));
+				pointCount++;
+			} else if (isFirst && pointCount > 2)
+			{
+				closed = true;
+				tempShape.setFillColor(Palette::Player1);
+				startPoint.setFillColor(sf::Color::Transparent);
+			}
+		}
+		if (pointCount == size && !closed)
+		{
+			closed = true;
+			startPoint.setFillColor(sf::Color::Transparent);
+			tempShape.setFillColor(Palette::Player1);
 		}
 	}
 }
 
-void BuildGrid::Click(Vec2 mouse)
+void BuildGrid::RemovePoint(Vec2 mouse)
 {
-	for (auto& block : shapes)
-    {
-        if (block.second.getGlobalBounds().contains(mouse))
-        {
-            if (!values[block.first])
-            {
-                TrueBlock(block.first);
-               	trueing = true;
-            } else
-            {
-                values[block.first] = false;
-                block.second.setFillColor(emptyColor);
-                trueing = false;
-                blockCount-=1;
-            }
-        }
-    }
+	if (background.getGlobalBounds().contains(mouse))
+	{
+		if (pointCount > 0 && !closed)
+		{
+			points.pop_back();
+			pointCount--;
+		} else if (closed)
+			Reset();
+	}
 }
 
-void BuildGrid::ClickMove(Vec2 mouse)
+void BuildGrid::Reset()
 {
-	for (auto& block : shapes)
-    {
-        if (block.second.getGlobalBounds().contains(mouse))
-        {
-            if (!values[block.first] && trueing)
-            {
-            	TrueBlock(block.first);
-            } else
-            if (values[block.first] && !trueing)
-            {
-                values[block.first] = false;
-                block.second.setFillColor(emptyColor);
-                blockCount-=1;
-            }
-        }
-    }
+	closed = false;
+	points.clear();
+	pointCount = 0;
+	tempShape.setFillColor(Palette::Highlight1);
+	startPoint.setFillColor(sf::Color::White);
+	startPoint.setPosition(-5, -5);
+}
+
+void BuildGrid::UpdateShape(Vec2 mouse)
+{
+	tempShape.setPointCount(pointCount+1);
+	int i = 0;
+	for (auto& point : points)
+	{
+		if (i == 0)
+			startPoint.setPosition(coordToScreen(points[i]));
+		tempShape.setPoint(i, point);
+		i++;
+	}
+	tempShape.setPoint(i, screenToCord(mouse));
 }
 
 void BuildGrid::MakeShape()
 {
-	std::vector<sf::ConvexShape> convShapes;
-	std::vector<Vec2> points, repeatedPoints;
-	for (auto& block : values)
+	float averageH = 0;
+	float averageV = 0;
+	for (auto& point : points)
 	{
-		if (block.second)
-		{
-			sf::ConvexShape shape(4);
-		    shape.setPoint(0, Vec2(0+block.first.x, 0+block.first.y));
-		    shape.setPoint(1, Vec2(1+block.first.x, 0+block.first.y));
-		    shape.setPoint(2, Vec2(1+block.first.x, 1+block.first.y));
-		    shape.setPoint(3, Vec2(0+block.first.x, 1+block.first.y));
-		    convShapes.push_back(shape);
-		}
+		averageH  += point.x;
+		averageV += point.y;
 	}
-	for (auto it = convShapes.begin(); it != convShapes.end(); it++)
-	{
-		for (auto it2 = convShapes.begin()+1; it2 != convShapes.end(); it2++)
-		{
-			if (it != it2)
-			{
-				//std::cout << "not same\n";
-				for (int i = 0; i < 4; i++)
-				{
-					for (int j = 0; j < 4; j++)
-					{
-						if (((*it).getPoint(i).x == (*it2).getPoint(j).x &&
-							(*it).getPoint(i).y == (*it2).getPoint(j).y) && (*it).getPoint(i).x != -1)
-						{
-							repeatedPoints.push_back((*it).getPoint(i));
-							//std::cout << "(" << (*it).getPoint(i).x << ", " << (*it).getPoint(i).y << ") == ";
-							//std::cout << "(" << (*it2).getPoint(j).x << ", " << (*it2).getPoint(j).y << ")\n";
-							(*it).setPoint(i, Vec2(-1, -1));
-							(*it2).setPoint(j, Vec2(-1, -1));
-						}
-					}
-				}
-			}
-		}
-	}
-	for (auto &shape : convShapes)
-	{
-		for (auto &repPoint : repeatedPoints)
-		{
-			for (int i = 0; i < 4; i++)
-			{
-				if (shape.getPoint(i).x == repPoint.x &&
-				shape.getPoint(i).y == repPoint.y && shape.getPoint(i).x != -1)
-				{
-					//std::cout << "(" << shape.getPoint(i).x << ", " << shape.getPoint(i).y << ") == ";
-					//std::cout << "(" << repPoint.x << ", " << repPoint.y << ")\n";
-					shape.setPoint(i, Vec2(-1, -1));
-				}
-			}
-		}
-		
-	}
-	float horizontal = 0;
-	float vertical = 0;
-	for (auto& shape : convShapes)
-	{
-		for (int i = 0; i < 4; i++)
-		{
-			if (shape.getPoint(i).x != -1)
-			{
-				horizontal += shape.getPoint(i).x;
-				vertical += shape.getPoint(i).y;
-				points.push_back(shape.getPoint(i));
-			}
-		}
-	}
-	int pointCount = points.size();
-	std::map<float, Vec2> sortedPoints;
-	Vec2 centroid = {horizontal/pointCount, vertical/pointCount};
+	Vec2 centroid = {averageH/pointCount, averageV/pointCount};
 	float minX = centroid.x, maxX = centroid.x;
 	float minY = centroid.y, maxY = centroid.y;
 	for (auto& point : points)
@@ -203,25 +193,16 @@ void BuildGrid::MakeShape()
 			maxY = point.y;
 		else if (point.y < minY)
 			minY = point.y;
-		Vec2 vect = {centroid.x-point.x, centroid.y-point.y};
-		float angle = atan2(vect.y, vect.x);
-		if (angle < 0)
-			angle += 2*M_PI;
-		//std::cout << angle << std::endl;
-		sortedPoints.insert(std::make_pair(angle, point));
 	}
 	dimensions = {maxX-minX, maxY-minY};
-	sf::ConvexShape *returnShape = new sf::ConvexShape(pointCount);
+	fullShape->setPointCount(pointCount);
 	int i = 0;
-	//std::cout << "gui.cpp\n";
-	for (auto& point : sortedPoints)
+	for (auto& point : points)
 	{
-		returnShape->setPoint(i, point.second);
-		//std::cout << "(" << point.second.x << ", " << point.second.y << ")\n";
+		fullShape->setPoint(i, point);
 		i++;
 	}
-	returnShape->setOrigin(centroid.x, centroid.y);
-	fullShape = returnShape;
+	fullShape->setOrigin(centroid.x, centroid.y);
 	fullShape->setPosition(300, 300);
 	fullShape->setFillColor(Player::mainPlayer->color);
 	fullShape->setRotation(0);
