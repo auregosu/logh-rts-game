@@ -1,56 +1,21 @@
 #ifndef TOOLS_HPP
 #define TOOLS_HPP
-#define SCREENWIDTH 1000
-#define SCREENHEIGHT 620
 
 #include <iostream>
+#include <array>
 #include <limits>
 #include <SFML/Graphics.hpp>
 
 typedef sf::Vector2f Vec2;
 
-inline Vec2 operator/(const Vec2 &v1, const Vec2 &v2) {
-	return Vec2(v1.x/v2.x, v1.y/v2.y);
-}
+Vec2 operator/(const Vec2 &v1, const Vec2 &v2);
 
-inline std::ostream& operator<<(std::ostream& stream, const Vec2& vec)
-{
-	stream << "(" << vec.x << ", " << vec.y << ")";
-	return stream;
-}
+std::ostream& operator<<(std::ostream& stream, const Vec2& vec);
 
-inline std::vector<Vec2> ShapeToVector(sf::RectangleShape shape)
-{
-    std::vector<Vec2> points;
-    sf::Transform t = shape.getTransform();
-    for (int i = 0; i < shape.getPointCount(); i++)
-    {
-        points.push_back(t.transformPoint(shape.getPoint(i)));
-    }
-    return points;
-}
+std::vector<Vec2> ShapeToVector(sf::RectangleShape shape);
+std::vector<Vec2> ShapeToVector(sf::ConvexShape shape);
+std::vector<Vec2> ShapeToVector(sf::CircleShape shape);
 
-inline std::vector<Vec2> ShapeToVector(sf::ConvexShape shape)
-{
-    std::vector<Vec2> points;
-    sf::Transform t = shape.getTransform();
-    for (int i = 0; i < shape.getPointCount(); i++)
-    {
-        points.push_back(t.transformPoint(shape.getPoint(i)));
-    }
-    return points;
-}
-
-inline std::vector<Vec2> ShapeToVector(sf::CircleShape shape)
-{
-    std::vector<Vec2> points;
-    sf::Transform t = shape.getTransform();
-    for (int i = 0; i < shape.getPointCount(); i++)
-    {
-        points.push_back(t.transformPoint(shape.getPoint(i)));
-    }
-    return points;
-}
 struct coord { 
     int x, y; 
     inline bool operator==(const coord &o) const {
@@ -61,12 +26,6 @@ struct coord {
     }
 };
 
-enum PlayerAction{
-    NONE,
-    COMMAND_SHIP_MOVEMENT_START,
-    COMMAND_SHIP_MOVEMENT_ROTATE,
-    SELECTING_SQUARE,
-    CHANGING_SUPPLIES};
 
 enum GameStates {MENU, GAME};
 enum MenuScreens {SHAPEMAKE, BUILD};

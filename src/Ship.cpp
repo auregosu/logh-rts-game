@@ -1,9 +1,28 @@
 #include "Ship.hpp"
 
-Entity* Entity::isColliding()
+void Entity::Kill() {
+    entities.erase(this);
+    dead = true;
+    deadEntities.insert(this);
+}
+
+void Entity::KillDeadEntities()
 {
     for (auto& e : entities)
     {
+        if (!e->dead && e->health <= 0)
+        {
+            e->Kill();
+        }
+    }
+}
+
+Entity* Entity::isColliding()
+{
+    std::cout << "entities: " << entities.size() << std::endl;
+    for (auto& e : entities)
+    {
+        std::cout << e->pos << std::endl;
         if (e == this)
             continue;
         if (Collisions::areOverlapping(GetPoints(), e->GetPoints()))
@@ -22,7 +41,7 @@ Ship::Ship(Player* _player, Vec2 _pos, std::string _localShape)
 	player = _player;
 	ships.insert(this);
 	pos = _pos;
-	localShape = shipShapes[_localShape];
+	*localShape = shipShapes[_localShape];
 	shape = *localShape;
 	shape.setOrigin(localShape->getOrigin().x, localShape->getOrigin().y);
 	shape.setFillColor(player->color);
@@ -66,6 +85,7 @@ Ship::Ship(Player* _player, Vec2 _pos, Ship blueprintShip)
     shape.setOrigin(localShape->getOrigin().x, localShape->getOrigin().y);
     shape.setFillColor(player->color);
     shape.setRotation(0);
+    mass = blueprintShip.mass;
     MassShield* shield = new MassShield(mass*5);
     modules.push_back(shield);
     for (auto& m : blueprintShip.modules)
@@ -97,13 +117,11 @@ Ship::Ship(Player* _player, Vec2 _pos, Ship blueprintShip)
     sf::Color ghostColor = shape.getFillColor();
     ghostColor.a = 100;
     ghost.setFillColor(ghostColor);
-    mass = blueprintShip.mass;
     fullHealth = 0;
     for (auto& m : modules)
     {
         fullHealth += m->fullHealth;
     }
-
     health = fullHealth;
     energy = fullEnergy;
     energyBar.setFillColor(sf::Color::Blue);
@@ -138,8 +156,8 @@ void Ship::Move(Vec2 destination, float destinatedRotation, Entity* destinationE
 		motorX->lastTargetPos = motorX->targetPos;
 		motorX->targetPos = destination.x;
 		motorX->targetDistance = pos.x-destination.x;
-		motorX->prevDistance = motorX->targetDistance; 
-		willRotate += 1;
+    motorX->prevDistance = motorX->targetDistance;
+    willRotate += 1;
 		if (motorX->moving)
 			motorX->stopping = true;
 		else
@@ -203,14 +221,14 @@ bool Ship::ClickSelect(Player* clickPlayer, Vec2 mousePos, bool isShiftPressed)
     bool returnValue = false;
     selectedShips.clear();
     for (auto& ship : ships)
-    {   
-        if (ship->shape.getGlobalBounds().contains(mousePos.x, mousePos.y) && ship->player == clickPlayer)
+    {
+        if (Collisions::Contains(ship->GetPoints(), mousePos) && ship->player == clickPlayer)
         {
             ship->selected = true;
             ship->shape.setFillColor(Palette::Highlight1);
             selectedShips.insert(ship);
             returnValue = true;
-        } else 
+        } else
         {
             if (ship->selected && isShiftPressed)
             {
@@ -229,14 +247,13 @@ bool Ship::ClickSelect(Player* clickPlayer, Vec2 mousePos, bool isShiftPressed)
 void Ship::SquareSelect(Player* clickPlayer, bool isShiftPressed)
 {
     selectedShips.clear();
-    for (auto& ship : ships)
-    {   
-        if (ship->shape.getGlobalBounds().intersects(clickPlayer->selectionSquare.getGlobalBounds()) && ship->player == clickPlayer)
+    for (auto& ship : ships) {
+        if (Collisions::areOverlapping(ShapeToVector(clickPlayer->selectionSquare), ship->GetPoints()) && ship->player == clickPlayer)
         {
             ship->selected = true;
             ship->shape.setFillColor(Palette::Highlight1);
             selectedShips.insert(ship);
-        } else 
+        } else
         {
             if (ship->selected && isShiftPressed)
             {
@@ -255,7 +272,7 @@ void Ship::SquareSelect(Player* clickPlayer, bool isShiftPressed)
 void Ship::Update()
 {
     for (auto& p : ships)
-    {       
+    {
     	if (p->health < p->fullHealth)
     	{
     		float prevModuleHealth = 0;
@@ -312,7 +329,7 @@ void Ship::Update()
     	{
     		//std::cout << "currentRotation: " << p->shape.getRotation() << std::endl;
     		//std::cout << "targetRotation: " << p->targetRotation << std::endl;
-    		float rotationSpeed = 10*(p->motorX->speed+p->motorY->speed)*deltaTime/p->mass;
+    		float rotationSpeed = 50*(p->motorX->speed+p->motorY->speed)*deltaTime/p->mass;
     		float dif = p->targetRotation-p->shape.getRotation();
     		short unsigned int q = 0;
     		if (dif > 0 && dif < 180)
@@ -348,20 +365,13 @@ void Ship::Update()
     		}
     	}
         // Collision.
-        for (auto& p2 : ships)
-        {
-            if (p2 != p)
-            {
-                if (p2->shape.getGlobalBounds().intersects(p->shape.getGlobalBounds()))
-                {
-                    //p->speed = p->maxSpeed*0.1;
-                } else
-                {
-                    //p->speed = p->maxSpeed;
-                }
+        /*
+        if (p->isColliding()) {
+            p->shape.setFillColor(Palette::Tech1);
+        } else
+            p->shape.setFillColor(p->player->color);
+            */
 
-            }
-        }
         // POSITIONING.
         // Weapon position.
         p->attacking = false;
@@ -386,15 +396,14 @@ void Ship::Update()
     }
 }
 
-void Ship::Draw(sf::RenderWindow* window, GameStates gameState, PlayerAction action, 
-        sf::Vertex* mouseLine)
+void Ship::Draw(sf::RenderWindow* window, GameStates gameState)
 {
     switch (gameState)
     {
         case GAME:
-            if (action == PlayerAction::COMMAND_SHIP_MOVEMENT_ROTATE && selected)
+            if (Player::mainPlayer->action == Player::COMMAND_SHIP_MOVEMENT_ROTATE && selected)
             {
-                window->draw(mouseLine, 2, sf::Lines);
+                //window->draw(mouseLine, 2, sf::Lines);
                 window->draw(ghost);
             }
             if (health > 0)
@@ -542,7 +551,7 @@ void Supply::Update()
     }
 }
 
-void Supply::Draw(sf::RenderWindow* window, GameStates gameState, PlayerAction action, sf::Vertex* mouseLine)
+void Supply::Draw(sf::RenderWindow* window, GameStates gameState)
 {  
     switch (gameState)
     {
@@ -614,7 +623,7 @@ void Settlement::Update()
 {
     for (auto& s : settlements)
     {
-        if (s->player->action == PlayerAction::CHANGING_SUPPLIES)
+        if (s->player->action == Player::CHANGING_SUPPLIES)
         {
             for (auto& ship : s->ships)
             {
@@ -640,18 +649,18 @@ void Settlement::Update()
     }
 }
 
-void Settlement::Draw(sf::RenderWindow* window, GameStates gameState, PlayerAction action, sf::Vertex* mouseLine)
+void Settlement::Draw(sf::RenderWindow* window, GameStates gameState)
 {
     switch (gameState)
     {
         case GAME:
-            if (action == PlayerAction::CHANGING_SUPPLIES)
+            if (Player::mainPlayer->action == Player::CHANGING_SUPPLIES)
             {
                 for (auto& pair : mouseLines)
                 {
                     window->draw(&(pair.second)[0], 2, sf::Lines);
                 }
-                window->draw(mouseLine, 2, sf::Lines);
+                //window->draw(mouseLine, 2, sf::Lines);
             }
             if (health > 0)
                 window->draw(shape);
@@ -659,7 +668,7 @@ void Settlement::Draw(sf::RenderWindow* window, GameStates gameState, PlayerActi
     }
 }
 std::unordered_set<Entity*> Entity::entities, Entity::deadEntities;
-std::map<std::string, ShipShape*> Ship::shipShapes;
+std::map<std::string, ShipShape> Ship::shipShapes;
 std::unordered_set<Ship*> Ship::ships, Ship::selectedShips;
 float Ship::shipScale = 60;
 std::unordered_set<Supply*> Supply::supplies;

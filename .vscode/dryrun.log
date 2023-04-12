@@ -1,0 +1,16 @@
+make --dry-run --always-make --keep-going --print-directory
+make: Entering directory '/home/mietek/Dropbox/Linux/Documents/Programming/LOGH-2'
+g++ -w -g --std=c++17 -c -I include src/Collisions.cpp -lsfml-system -lsfml-window -lsfml-graphics -o obj/Collisions.o
+g++ -w -g --std=c++17 -c -I include src/GameManager.cpp -lsfml-system -lsfml-window -lsfml-graphics -o obj/GameManager.o
+g++ -w -g --std=c++17 -c -I include src/Player.cpp -lsfml-system -lsfml-window -lsfml-graphics -o obj/Player.o
+g++ -w -g --std=c++17 -c -I include src/ShipMaker.cpp -lsfml-system -lsfml-window -lsfml-graphics -o obj/ShipMaker.o
+g++ -w -g --std=c++17 -c -I include src/WeaponTypes.cpp -lsfml-system -lsfml-window -lsfml-graphics -o obj/WeaponTypes.o
+g++ -w -g --std=c++17 -c -I include src/Module.cpp -lsfml-system -lsfml-window -lsfml-graphics -o obj/Module.o
+g++ -w -g --std=c++17 -c -I include src/Ship.cpp -lsfml-system -lsfml-window -lsfml-graphics -o obj/Ship.o
+g++ -w -g --std=c++17 -c -I include src/ModuleTypes.cpp -lsfml-system -lsfml-window -lsfml-graphics -o obj/ModuleTypes.o
+g++ -w -g --std=c++17 -c -I include src/GUI.cpp -lsfml-system -lsfml-window -lsfml-graphics -o obj/GUI.o
+g++ -w -g --std=c++17 -c -I include src/main.cpp -lsfml-system -lsfml-window -lsfml-graphics -o obj/main.o
+g++ -w -g --std=c++17 -c -I include src/ButtonActions.cpp -lsfml-system -lsfml-window -lsfml-graphics -o obj/ButtonActions.o
+g++ -w -g --std=c++17 obj/Collisions.o obj/GameManager.o obj/Player.o obj/ShipMaker.o obj/WeaponTypes.o obj/Module.o obj/Ship.o obj/ModuleTypes.o obj/GUI.o obj/main.o obj/ButtonActions.o -lsfml-system -lsfml-window -lsfml-graphics -o bin/main
+make: Leaving directory '/home/mietek/Dropbox/Linux/Documents/Programming/LOGH-2'
+ 

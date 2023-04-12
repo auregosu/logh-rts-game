@@ -13,7 +13,7 @@ obj/%.o: src/%.cpp
 clear:
 	rm obj/*.o
 
-obj/%.o: include/%.h
+obj/%.o: include/%.hpp
 
 #main: $(wildcard obj/*.o)
 #	g++ obj/*.o $(FLAGS) -o main

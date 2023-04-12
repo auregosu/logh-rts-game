@@ -13,11 +13,17 @@ struct Player
     static unsigned int playerCount;
     unsigned int playerID;
     std::string name = "player";
-    PlayerAction action = PlayerAction::NONE;
+    enum PlayerAction{
+        NONE,
+        MOVING_MODULE,
+        COMMAND_SHIP_MOVEMENT_START,
+        COMMAND_SHIP_MOVEMENT_ROTATE,
+        SELECTING_SQUARE,
+        CHANGING_SUPPLIES} action = NONE;
     sf::Color color = sf::Color::White;
     sf::RectangleShape selectionSquare;
     Player(std::string _name, sf::Color _color);
-    Vec2 pivot1, pivot2, shipAveragePos;
+    Vec2 shipAveragePos;
     float prevShipRotation;
 };
 

@@ -17,7 +17,7 @@ public:
     float health, fullHealth;
     bool dead;
 
-    Entity()
+    inline Entity()
     {
         dead = false;
         entities.insert(this);
@@ -33,28 +33,17 @@ public:
         }
         return nullptr;
     }
-    inline virtual void Draw(sf::RenderWindow* window, GameStates gameState, PlayerAction action, 
-            sf::Vertex* mouseLine) {}
+    inline virtual void Draw(sf::RenderWindow* window, GameStates gameState) {}
     inline virtual int GetPointNum() {}
-    inline virtual void Kill() {}
-    inline static void KillAllEntities()
-    {
-        for (auto& e : deadEntities)
-        {
-            if (!e->dead && e->health <= 0)
-            {
-                e->Kill();
-                e->dead = true;
-            }
-        }
-    }
+    virtual void Kill();
+    static void KillDeadEntities();
 };
 
 class Ship : public Entity
 {
 public:
     static float shipScale;
-    static std::map<std::string, ShipShape*> shipShapes;
+    static std::map<std::string, ShipShape> shipShapes;
     static std::unordered_set<Ship*> ships, selectedShips;
     std::vector<Module*> modules;
     std::vector<Weapon*> weapons;
@@ -72,11 +61,14 @@ public:
     Ship() {};
     Ship(Player* _player, Vec2 _pos, std::string _localShape);
     Ship(Player* _player, Vec2 _pos, Ship blueprintShip);
-    void Kill()
+    inline void Kill()
     {
         ships.erase(this);
         entities.erase(this);
+        dead = true;
+        deadEntities.insert(this);
     }
+
     std::vector<Vec2> GetPoints();
 
     void Move(Vec2 destination, float destinatedRotation, Entity* destinationEntity, float range);
@@ -110,8 +102,7 @@ public:
 
     void SelectWeapon(long unsigned int j);
     
-    void Draw(sf::RenderWindow* window, GameStates gameState, PlayerAction action, 
-            sf::Vertex* mouseLine);
+    void Draw(sf::RenderWindow* window, GameStates gameState);
 
     static void Update();
 
@@ -145,8 +136,7 @@ public:
 
     void Move(Vec2 destination, Ship* destinationShip = nullptr);
 
-    void Draw(sf::RenderWindow* window, GameStates gameState, PlayerAction action, 
-            sf::Vertex* mouseLine);
+    void Draw(sf::RenderWindow* window, GameStates gameState);
 
     inline int GetPointNum() {return shape.getPointCount();}
     static void Update();
@@ -166,6 +156,8 @@ public:
     {
         settlements.erase(this);
         entities.erase(this);
+        dead = true;
+        deadEntities.insert(this);
     }
     std::vector<Vec2> GetPoints();
 
@@ -193,8 +185,7 @@ public:
         }
     }
 
-    void Draw(sf::RenderWindow* window, GameStates gameState, PlayerAction action, 
-            sf::Vertex* mouseLine);
+    void Draw(sf::RenderWindow* window, GameStates gameState);
 
     inline int GetPointNum() {return shape.getPointCount();}
     static bool ClickSelect(Player* clickPlayer, Vec2 mousePos, bool isShiftPressed);

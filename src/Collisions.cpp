@@ -54,3 +54,34 @@ bool Collisions::areOverlapping(std::vector<Vec2> s1, std::vector<Vec2> s2)
     }
     return true;
 }
+
+bool Collisions::Contains(std::vector<Vec2> s1, Vec2 p)
+{
+    int N = s1.size();
+    int counter = 0;
+    int i;
+    double xinters;
+    Vec2 p1, p2;
+
+    p1 = s1[0];
+    for (i=1;i<=N;i++) {
+        p2 = s1[i % N];
+        if (p.y > std::min(p1.y,p2.y)) {
+            if (p.y <= std::max(p1.y,p2.y)) {
+                if (p.x <= std::max(p1.x,p2.x)) {
+                    if (p1.y != p2.y) {
+                        xinters = (p.y-p1.y)*(p2.x-p1.x)/(p2.y-p1.y)+p1.x;
+                        if (p1.x == p2.x || p.x <= xinters)
+                        counter++;
+                    }
+                }
+            }
+        }
+        p1 = p2;
+    }
+
+    if (counter % 2 == 0)
+        return false;
+    else
+        return true;
+}
